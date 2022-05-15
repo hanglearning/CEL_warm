@@ -58,44 +58,55 @@ class Client():
         prune_rate = get_prune_summary(model=self.global_model,
                                        name='weight')['global']
         print('Global model prune percentage: {}'.format(prune_rate))
-           
-        if self.cur_prune_rate < self.args.prune_threshold:
-            if accuracy > self.eita:
-                self.cur_prune_rate = min(self.cur_prune_rate + self.args.prune_step,
-                                          self.args.prune_threshold)
+        
+        if self.elapsed_comm_rounds == 0 and self.args.warm_mask:
+            # warm mask
+            # train then prune
+            self.model = self.global_model
+            self.train(self.elapsed_comm_rounds)
+            # prune
+            l1_prune(model=self.global_model,
+                    amount=self.args.prune_step,
+                    name='weight',
+                    verbose=self.args.prune_verbose)
+        else:
+            if self.cur_prune_rate < self.args.prune_threshold:
+                if accuracy > self.eita:
+                    self.cur_prune_rate = min(self.cur_prune_rate + self.args.prune_step,
+                                            self.args.prune_threshold)
+                    if self.cur_prune_rate > prune_rate:
+                        l1_prune(model=self.global_model,
+                                amount=self.cur_prune_rate - prune_rate,
+                                name='weight',
+                                verbose=self.args.prune_verbose)
+                        self.prune_rates.append(self.cur_prune_rate)
+                    else:
+                        self.prune_rates.append(prune_rate)
+                    # reinitialize model with init_params
+                    source_params = dict(self.global_init_model.named_parameters())
+                    for name, param in self.global_model.named_parameters():
+                        param.data.copy_(source_params[name].data)
+
+                    self.model = self.global_model
+                    self.eita = self.eita_hat
+
+                else:
+                    self.eita *= self.alpha
+                    self.model = self.global_model
+                    self.prune_rates.append(prune_rate)
+            else:
                 if self.cur_prune_rate > prune_rate:
                     l1_prune(model=self.global_model,
-                             amount=self.cur_prune_rate - prune_rate,
-                             name='weight',
-                             verbose=self.args.prune_verbose)
+                            amount=self.cur_prune_rate-prune_rate,
+                            name='weight',
+                            verbose=self.args.prune_verbose)
                     self.prune_rates.append(self.cur_prune_rate)
                 else:
-                    self.prune_rates.append(prune_rate)
-                # reinitialize model with init_params
-                source_params = dict(self.global_init_model.named_parameters())
-                for name, param in self.global_model.named_parameters():
-                    param.data.copy_(source_params[name].data)
-
+                    self.prune_rates.append(self.prune_rates)
                 self.model = self.global_model
-                self.eita = self.eita_hat
 
-            else:
-                self.eita *= self.alpha
-                self.model = self.global_model
-                self.prune_rates.append(prune_rate)
-        else:
-            if self.cur_prune_rate > prune_rate:
-                l1_prune(model=self.global_model,
-                         amount=self.cur_prune_rate-prune_rate,
-                         name='weight',
-                         verbose=self.args.prune_verbose)
-                self.prune_rates.append(self.cur_prune_rate)
-            else:
-                self.prune_rates.append(self.prune_rates)
-            self.model = self.global_model
-
-        print(f"\nTraining local model")
-        self.train(self.elapsed_comm_rounds)
+            print(f"\nTraining local model")
+            self.train(self.elapsed_comm_rounds)
 
         print(f"\nEvaluating Trained Model")
         metrics = self.eval(self.model)

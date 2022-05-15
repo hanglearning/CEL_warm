@@ -10,19 +10,18 @@ from dataset.mnist_noniid import get_dataset_mnist_extr_noniid, mnist_extr_nonii
 # Given each user euqal number of samples if possible. If not, the last user
 # gets whatever is left after other users had their shares
 
-# This is from jeremy313 LotteryFL
 
-def DataLoaders(n_devices, dataset_name, n_class, nsamples, mode="non-iid", batch_size=32, rate_unbalance=1.0, num_workers=1):
+def DataLoaders(num_users, dataset_name, n_class, nsamples, mode="non-iid", batch_size=32, rate_unbalance=1.0, num_workers=1):
     if mode == "non-iid":
         if dataset_name == "mnist":
-            return get_data_noniid_mnist(n_devices,
+            return get_data_noniid_mnist(num_users,
                                          n_class,
                                          nsamples,
                                          batch_size,
                                          rate_unbalance,
                                          num_workers)
         elif dataset_name == "cifar10":
-            return get_data_noniid_cifar10(n_devices,
+            return get_data_noniid_cifar10(num_users,
                                            n_class,
                                            nsamples,
                                            batch_size,
@@ -39,7 +38,7 @@ def DataLoaders(n_devices, dataset_name, n_class, nsamples, mode="non-iid", batc
 
             test_dataset = tv.datasets.CIFAR10(data_dir, train=False, download=True,
                                                transform=apply_transform)
-            return iid_split(n_devices, train_dataset, batch_size, test_dataset, num_workers)
+            return iid_split(num_users, train_dataset, batch_size, test_dataset, num_workers)
         elif dataset_name == 'mnist':
             data_dir = './data'
             apply_transform = transforms.Compose([
@@ -50,7 +49,7 @@ def DataLoaders(n_devices, dataset_name, n_class, nsamples, mode="non-iid", batc
 
             test_dataset = tv.datasets.MNIST(data_dir, train=False, download=True,
                                              transform=apply_transform)
-            return iid_split(n_devices, train_dataset, batch_size, test_dataset, num_workers)
+            return iid_split(num_users, train_dataset, batch_size, test_dataset, num_workers)
 
 
 def iid_split(num_clients,
@@ -81,16 +80,16 @@ def iid_split(num_clients,
     return user_train_loaders, user_test_loaders
 
 
-def get_data_noniid_cifar10(n_devices, n_class, nsamples, batch_size=32, rate_unbalance=1.0, num_workers=1):
+def get_data_noniid_cifar10(num_users, n_class, nsamples, batch_size=32, rate_unbalance=1.0, num_workers=1):
 
     train_data, test_data = [], []
     train_data, test_data, user_train, user_test = get_dataset_cifar10_extr_noniid(
-        n_devices, n_class, nsamples, rate_unbalance)
+        num_users, n_class, nsamples, rate_unbalance)
 
     train_loaders = []
     test_loaders = []
 
-    for i in range(n_devices):
+    for i in range(num_users):
         user_train_temp = []
         user_test_temp = []
         for j in range(user_train[i].size):
@@ -112,16 +111,16 @@ def get_data_noniid_cifar10(n_devices, n_class, nsamples, batch_size=32, rate_un
     return train_loaders, test_loaders
 
 
-def get_data_noniid_mnist(n_devices, n_class, nsamples, batch_size=32, rate_unbalance=1.0, num_workers=1):
+def get_data_noniid_mnist(num_users, n_class, nsamples, batch_size=32, rate_unbalance=1.0, num_workers=1):
 
     train_data, test_data = [], []
     train_data, test_data, user_train, user_test = get_dataset_mnist_extr_noniid(
-        n_devices, n_class, nsamples, rate_unbalance)
+        num_users, n_class, nsamples, rate_unbalance)
 
     train_loaders = []
     test_loaders = []
 
-    for i in range(n_devices):
+    for i in range(num_users):
         user_train_temp = []
         user_test_temp = []
         for j in range(user_train[i].size):

@@ -61,6 +61,8 @@ if __name__ == "__main__":
     parser.add_argument('--device', type=str, default='cpu')
     parser.add_argument('--fast_dev_run', type=bool, default=False)
     parser.add_argument('--num_workers', type=int, default=0)
+    parser.add_argument('--warm_mask', type=int, default=1)
+    parser.add_argument('--project', type=str, default="dummy")
 
     args = parser.parse_args()
 
@@ -69,7 +71,7 @@ if __name__ == "__main__":
     model = create_model(cls=models[args.dataset]
                          [args.arch], device=args.device)
 
-    train_loaders, test_loaders = DataLoaders(n_devices=args.num_clients,
+    train_loaders, test_loaders = DataLoaders(num_users=args.num_clients,
                                               dataset_name=args.dataset,
                                               n_class=args.n_class,
                                               nsamples=args.n_samples,
@@ -83,8 +85,8 @@ if __name__ == "__main__":
         clients.append(client)
 
     wandb.login()
-    wandb.init(project="CELL_mask_warming", entity="hangchen")
-    wandb.run.name = f"num_clients_{args.num_clients}_n_samples_{args.n_samples}_n_class_{args.n_class}_rounds_{args.rounds}_eita_{args.eita}_alpha_{args.alpha}_seed_{args.seed}(Pure CELL)"
+    wandb.init(project=args.project, entity="hangchen")
+    wandb.run.name = f"num_clients_{args.num_clients}_n_samples_{args.n_samples}_n_class_{args.n_class}_rounds_{args.rounds}_eita_{args.eita}_alpha_{args.alpha}_seed_{args.seed}_warm_mask_{args.warm_mask}"
     wandb.run.save()
     wandb.config.update(args)
 
