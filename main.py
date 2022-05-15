@@ -83,7 +83,7 @@ if __name__ == "__main__":
         clients.append(client)
 
     wandb.login()
-    wandb.init(project="CELL_mask_warming", entity="chenhang")
+    wandb.init(project="CELL_mask_warming", entity="hangchen")
     wandb.run.name = f"num_clients_{args.num_clients}_n_samples_{args.n_samples}_n_class_{args.n_class}_rounds_{args.rounds}_eita_{args.eita}_alpha_{args.alpha}_seed_{args.seed}(Pure CELL)"
     wandb.run.save()
     wandb.config.update(args)
