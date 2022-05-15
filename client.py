@@ -69,6 +69,7 @@ class Client():
                     amount=self.args.prune_step,
                     name='weight',
                     verbose=self.args.prune_verbose)
+            print("warming mask")
         else:
             if self.cur_prune_rate < self.args.prune_threshold:
                 if accuracy > self.eita:
