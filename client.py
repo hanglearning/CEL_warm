@@ -77,6 +77,7 @@ class Client():
                 for name, mask in module.named_buffers():
                     if 'mask' in name:
                         self._mask[layer] = mask
+            self.prune_rates.append(self.args.prune_step)
         else:
             self.model = self.global_model
             if self.args.warm_mask:
@@ -124,6 +125,7 @@ class Client():
                 # self.model = self.global_model
 
             print(f"\nTraining local model")
+            # one difference - in CELL there could be chances to train the whole model in the middle, but with mask warming, the entire model never trained again
             self.train(self.elapsed_comm_rounds)
 
         print(f"\nEvaluating Trained Model")
