@@ -72,7 +72,7 @@ if __name__ == "__main__":
     model = create_model(cls=models[args.dataset]
                          [args.arch], device=args.device)
 
-    train_loaders, test_loaders = DataLoaders(num_users=args.num_clients,
+    train_loaders, test_loaders = DataLoaders(n_devices=args.num_clients,
                                               dataset_name=args.dataset,
                                               n_class=args.n_class,
                                               nsamples=args.n_samples,
