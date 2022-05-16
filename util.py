@@ -285,6 +285,23 @@ def test(
         print(tabulate(outputs, headers='keys', tablefmt='github'))
     return outputs
 
+def get_num_total_model_params(model):
+    total_num_model_params = 0
+    # not including bias
+    for layer_name, params in model.named_parameters():
+        if 'weight' in layer_name:
+            total_num_model_params += params.numel()
+    return total_num_model_params
+
+def get_pruned_amount_from_mask(model):
+    total_params_count = get_num_total_model_params(model)
+    total_0_count = 0
+    for layer, module in model.named_children():
+        for name, mask in module.named_buffers():
+            if 'mask' in name:
+                total_0_count += len(list(zip(*np.where(mask == 0))))
+    return total_0_count / total_params_count
+
 
 def l1_prune(model, amount=0.00, name='weight', verbose=False, glob=False):
     """

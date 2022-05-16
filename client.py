@@ -9,7 +9,7 @@ import copy
 import math
 import wandb
 from torch.nn.utils import prune
-from util import get_prune_summary, l1_prune, get_prune_params, copy_model
+from util import get_prune_summary, l1_prune, get_prune_params, copy_model, get_pruned_amount_from_mask
 from util import train as util_train
 from util import test as util_test
 
@@ -43,6 +43,8 @@ class Client():
         self.model = None
         self.global_model = None
         self.global_init_model = None
+        
+        self._mask = {}
 
     def update(self) -> None:
         """
@@ -62,21 +64,33 @@ class Client():
         if self.elapsed_comm_rounds == 0 and self.args.warm_mask:
             # warm mask
             # train then prune
+            print(f"{self.idx} is warming mask...")
             self.model = self.global_model
             self.train(self.elapsed_comm_rounds)
             # prune
-            l1_prune(model=self.global_model,
+            l1_prune(model=self.model,
                     amount=self.args.prune_step,
                     name='weight',
                     verbose=self.args.prune_verbose)
-            print("warming mask")
+            # save local mask
+            for layer, module in self.model.named_children():
+                for name, mask in module.named_buffers():
+                    if 'mask' in name:
+                        self._mask[layer] = mask
         else:
+            self.model = self.global_model
+            if self.args.warm_mask:
+                # reapply local mask
+                for layer, module in self.model.named_children():
+                    for name, weight_params in module.named_parameters():
+                        if 'weight' in name:
+                            weight_params.data.copy_(torch.tensor(np.multiply(weight_params.data, self._mask[layer])))
             if self.cur_prune_rate < self.args.prune_threshold:
                 if accuracy > self.eita:
                     self.cur_prune_rate = min(self.cur_prune_rate + self.args.prune_step,
                                             self.args.prune_threshold)
                     if self.cur_prune_rate > prune_rate:
-                        l1_prune(model=self.global_model,
+                        l1_prune(model=self.model,
                                 amount=self.cur_prune_rate - prune_rate,
                                 name='weight',
                                 verbose=self.args.prune_verbose)
@@ -88,23 +102,26 @@ class Client():
                     for name, param in self.global_model.named_parameters():
                         param.data.copy_(source_params[name].data)
 
-                    self.model = self.global_model
+                    # self.model = self.global_model
                     self.eita = self.eita_hat
 
                 else:
                     self.eita *= self.alpha
-                    self.model = self.global_model
+                    # self.model = self.global_model
                     self.prune_rates.append(prune_rate)
             else:
                 if self.cur_prune_rate > prune_rate:
-                    l1_prune(model=self.global_model,
+                    l1_prune(model=self.model,
                             amount=self.cur_prune_rate-prune_rate,
                             name='weight',
                             verbose=self.args.prune_verbose)
+                    print(f"TO prune amount is {self.cur_prune_rate-prune_rate}")
+                    print(f"REAL prune_rate is {get_pruned_amount_from_mask(self.model)}")
+                    print(f"RECORDED prune_rate is {self.cur_prune_rate}")
                     self.prune_rates.append(self.cur_prune_rate)
                 else:
-                    self.prune_rates.append(self.prune_rates)
-                self.model = self.global_model
+                    self.prune_rates.append(self.cur_prune_rate)
+                # self.model = self.global_model
 
             print(f"\nTraining local model")
             self.train(self.elapsed_comm_rounds)
