@@ -38,7 +38,8 @@ if __name__ == "__main__":
     parser.add_argument('--num_clients', type=int, default=5)
     parser.add_argument('--rounds', type=int, default=20)
     parser.add_argument('--prune_step', type=float, default=0.2)
-    parser.add_argument('--prune_threshold', type=float, default=0.6)
+    parser.add_argument('--prune_threshold', type=float, default=0.8)
+    parser.add_argument('--step_freq', type=int, default=2)
     parser.add_argument('--server_prune', type=bool, default=False)
     parser.add_argument('--server_prune_step', type=float, default=0.2)
     parser.add_argument('--server_prune_freq', type=int, default=10)
@@ -87,7 +88,7 @@ if __name__ == "__main__":
 
     wandb.login()
     wandb.init(project=args.project, entity="hangchen")
-    wandb.run.name = f"num_clients_{args.num_clients}_n_samples_{args.n_samples}_n_class_{args.n_class}_rounds_{args.rounds}_eita_{args.eita}_alpha_{args.alpha}_seed_{args.seed}_warm_mask_{args.warm_mask}_run_note_{args.run_note}"
+    wandb.run.name = f"num_clients_{args.num_clients}_n_samples_{args.n_samples}_n_class_{args.n_class}_rounds_{args.rounds}_seed_{args.seed}_warm_mask_{args.warm_mask}_run_note_{args.run_note}"
     wandb.run.save()
     wandb.config.update(args)
 

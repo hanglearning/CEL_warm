@@ -86,44 +86,20 @@ class Client():
                     for name, weight_params in module.named_parameters():
                         if 'weight' in name:
                             weight_params.data.copy_(torch.tensor(np.multiply(weight_params.data, self._mask[layer])))
-            if self.cur_prune_rate < self.args.prune_threshold:
-                if accuracy > self.eita:
-                    self.cur_prune_rate = min(self.cur_prune_rate + self.args.prune_step,
-                                            self.args.prune_threshold)
-                    if self.cur_prune_rate > prune_rate:
-                        l1_prune(model=self.model,
-                                amount=self.cur_prune_rate - prune_rate,
-                                name='weight',
-                                verbose=self.args.prune_verbose)
-                        self.prune_rates.append(self.cur_prune_rate)
-                    else:
-                        self.prune_rates.append(prune_rate)
-                    # reinitialize model with init_params
-                    source_params = dict(self.global_init_model.named_parameters())
-                    for name, param in self.global_model.named_parameters():
-                        param.data.copy_(source_params[name].data)
-
-                    # self.model = self.global_model
-                    self.eita = self.eita_hat
-
-                else:
-                    self.eita *= self.alpha
-                    # self.model = self.global_model
-                    self.prune_rates.append(prune_rate)
-            else:
-                if self.cur_prune_rate > prune_rate:
-                    l1_prune(model=self.model,
-                            amount=self.cur_prune_rate-prune_rate,
+            # prune
+            prune_amount = round((self.elapsed_comm_rounds // 2 + 1) * self.args.prune_step, 1)
+            l1_prune(model=self.model,
+                            amount=prune_amount,
                             name='weight',
                             verbose=self.args.prune_verbose)
-                    print(f"TO prune amount is {self.cur_prune_rate-prune_rate}")
-                    print(f"REAL prune_rate is {get_pruned_amount_from_mask(self.model)}")
-                    print(f"RECORDED prune_rate is {self.cur_prune_rate}")
-                    self.prune_rates.append(self.cur_prune_rate)
-                else:
-                    self.prune_rates.append(self.cur_prune_rate)
-                # self.model = self.global_model
+            self.prune_rates.append(prune_amount)
+            
+            # reinitialize model with init_params
+            source_params = dict(self.global_init_model.named_parameters())
+            for name, param in self.global_model.named_parameters():
+                param.data.copy_(source_params[name].data)
 
+            # train
             print(f"\nTraining local model")
             # one difference - in CELL there could be chances to train the whole model in the middle, but with mask warming, the entire model never trained again
             self.train(self.elapsed_comm_rounds)
