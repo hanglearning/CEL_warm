@@ -88,7 +88,7 @@ if __name__ == "__main__":
 
     wandb.login()
     wandb.init(project=args.project, entity="hangchen")
-    wandb.run.name = f"clients_{args.num_clients}_samples_{args.n_samples}_class_{args.n_class}_rounds_{args.rounds}_step_{args.prune_step}_freq_{args.step_freq}seed_{args.seed}_warm_{args.warm_mask}_note_{args.run_note}"
+    wandb.run.name = f"clients_{args.num_clients}_samples_{args.n_samples}_class_{args.n_class}_rounds_{args.rounds}_step_{args.prune_step}_freq_{args.step_freq}_seed_{args.seed}_warm_{args.warm_mask}_note_{args.run_note}"
     wandb.run.save()
     wandb.config.update(args)
 
