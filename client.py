@@ -87,7 +87,7 @@ class Client():
                         if 'weight' in name:
                             weight_params.data.copy_(torch.tensor(np.multiply(weight_params.data, self._mask[layer])))
             # prune
-            prune_amount = round((self.elapsed_comm_rounds // 2 + 1) * self.args.prune_step, 1)
+            prune_amount = min(round((self.elapsed_comm_rounds // 2 + 1) * self.args.prune_step, 1), self.args.prune_threshold)
             l1_prune(model=self.model,
                             amount=prune_amount,
                             name='weight',
