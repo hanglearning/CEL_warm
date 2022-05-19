@@ -73,7 +73,7 @@ if __name__ == "__main__":
     model = create_model(cls=models[args.dataset]
                          [args.arch], device=args.device)
 
-    train_loaders, test_loaders = DataLoaders(num_users=args.num_clients,
+    train_loaders, test_loaders = DataLoaders(n_devices=args.num_clients,
                                               dataset_name=args.dataset,
                                               n_class=args.n_class,
                                               nsamples=args.n_samples,
@@ -88,7 +88,7 @@ if __name__ == "__main__":
 
     wandb.login()
     wandb.init(project=args.project, entity="hangchen")
-    wandb.run.name = f"num_clients_{args.num_clients}_n_samples_{args.n_samples}_n_class_{args.n_class}_rounds_{args.rounds}_seed_{args.seed}_warm_mask_{args.warm_mask}_run_note_{args.run_note}"
+    wandb.run.name = f"clients_{args.num_clients}_samples_{args.n_samples}_class_{args.n_class}_rounds_{args.rounds}_step_{args.prune_step}_freq_{args.step_freq}seed_{args.seed}_warm_{args.warm_mask}_note_{args.run_note}"
     wandb.run.save()
     wandb.config.update(args)
 
