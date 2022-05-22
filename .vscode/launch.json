@@ -28,7 +28,7 @@
             "program": "${workspaceFolder}/main.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["--num_clients" ,"20" ,"--prune_threshold" ,"0.8" ,"--n_samples" ,"100" ,"--n_class" ,"3","--warm_mask" ,"1" ,"--run_note" ,"poll_style_new_sharding" ,"--rounds" ,"80" ,"--seed" ,"40"]
+            "args": ["--num_clients" ,"5" ,"--prune_threshold" ,"0.8" ,"--n_samples" ,"100" ,"--n_class" ,"3","--warm_mask" ,"1" ,"--run_note" ,"poll_style_new_sharding" ,"--rounds" ,"80" ,"--seed" ,"40"]
         }
     ]
 }

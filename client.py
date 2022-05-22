@@ -61,6 +61,7 @@ class Client():
                                        name='weight')['global']
         print('Global model prune percentage: {}'.format(prune_rate))
         
+        
         if self.elapsed_comm_rounds == 0 and self.args.warm_mask:
             # warm mask
             # train then prune
@@ -80,12 +81,27 @@ class Client():
             self.prune_rates.append(self.args.prune_step)
         else:
             self.model = self.global_model
+            
+            acc = util_test(self.model,
+                self.test_loader,
+                self.args.device,
+                self.args.fast_dev_run,
+                self.args.test_verbose)['Accuracy'][0]
+        
+            wandb.log({f"{self.idx}_global_acc": acc, "round": self.elapsed_comm_rounds + 1})
             if self.args.warm_mask:
                 # reapply local mask
                 for layer, module in self.model.named_children():
                     for name, weight_params in module.named_parameters():
                         if 'weight' in name:
                             weight_params.data.copy_(torch.tensor(np.multiply(weight_params.data, self._mask[layer])))
+            acc = util_test(self.model,
+                self.test_loader,
+                self.args.device,
+                self.args.fast_dev_run,
+                self.args.test_verbose)['Accuracy'][0]
+        
+            wandb.log({f"{self.idx}_global_acc_with_mask": acc, "round": self.elapsed_comm_rounds + 1})
             # prune
             prune_amount = min(round(self.elapsed_comm_rounds // self.args.step_freq * self.args.prune_step, 1), self.args.prune_threshold)
             print(f"prune_amount: {prune_amount}")
